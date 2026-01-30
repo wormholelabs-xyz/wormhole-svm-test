@@ -1,0 +1,25 @@
+[package]
+name = "vaa-verifier-example"
+version = "0.1.0"
+edition = "2021"
+description = "Minimal example program demonstrating VAA verification with wormhole-svm-test"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = []
+no-entrypoint = []
+
+[dependencies]
+solana-program = { workspace = true }
+wormhole-raw-vaas = { workspace = true }
+wormhole-svm-definitions = { workspace = true }
+wormhole-svm-shim = { workspace = true }
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    'cfg(feature, values("custom-heap", "custom-panic"))',
+    'cfg(target_os, values("solana"))',
+]

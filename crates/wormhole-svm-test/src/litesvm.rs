@@ -655,7 +655,11 @@ mod tests {
             },
         );
 
-        assert!(result.is_ok(), "with_posted_signatures failed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "with_posted_signatures failed: {:?}",
+            result
+        );
 
         // Verify the signatures account was closed after the bracket
         let pubkey = captured_pubkey.expect("pubkey should have been captured");

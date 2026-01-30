@@ -1,0 +1,36 @@
+[package]
+name = "wormhole-svm-test"
+version = "0.1.0"
+edition = "2021"
+description = "Testing utilities for Wormhole SVM integrations"
+license = "Apache-2.0"
+
+[features]
+default = []
+litesvm = ["dep:litesvm", "dep:solana-sdk", "dep:wormhole-svm-definitions", "dep:wormhole-svm-shim"]
+bundled-fixtures = ["litesvm"]
+
+[dependencies]
+libsecp256k1 = { workspace = true }
+sha3 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+
+[dependencies.litesvm]
+workspace = true
+optional = true
+
+[dependencies.solana-sdk]
+workspace = true
+optional = true
+
+[dependencies.wormhole-svm-definitions]
+workspace = true
+optional = true
+
+[dependencies.wormhole-svm-shim]
+workspace = true
+optional = true
+
+[dev-dependencies]
+vaa-verifier-example = { path = "../../programs/vaa-verifier-example", features = ["no-entrypoint"] }
