@@ -1,0 +1,29 @@
+[package]
+name = "wormhole-svm-test"
+version = "0.1.0"
+edition = "2021"
+description = "Testing utilities for Wormhole SVM integrations"
+license = "Apache-2.0"
+
+[features]
+default = []
+litesvm = ["dep:litesvm", "dep:solana-sdk", "dep:wormhole-svm-definitions"]
+
+[dependencies]
+libsecp256k1 = "0.7"
+sha3 = "0.10"
+hex = "0.4"
+thiserror = "1.0"
+
+[dependencies.litesvm]
+version = ">= 0.6"
+optional = true
+
+[dependencies.solana-sdk]
+version = ">= 2.0"
+optional = true
+
+[dependencies.wormhole-svm-definitions]
+git = "https://github.com/wormhole-foundation/wormhole"
+features = ["solana"]
+optional = true
