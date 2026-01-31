@@ -17,7 +17,6 @@ use solana_sdk::{
     signature::{Keypair, Signer},
     transaction::Transaction,
 };
-use std::path::Path;
 use wormhole_svm_definitions::{
     find_core_bridge_config_address, find_emitter_sequence_address, find_event_authority_address,
     find_fee_collector_address, find_shim_message_address,
@@ -34,23 +33,11 @@ const MESSAGE_EMITTER_ID: Pubkey =
 
 /// Load the message-emitter-example program from the build directory.
 fn load_message_emitter(svm: &mut LiteSVM) {
-    let search_paths = [
-        "target/deploy/message_emitter_example.so",
-        "../target/deploy/message_emitter_example.so",
+    svm.add_program_from_file(
+        MESSAGE_EMITTER_ID,
         "../../target/deploy/message_emitter_example.so",
-        "../../../target/deploy/message_emitter_example.so",
-    ];
-    for path in &search_paths {
-        if Path::new(path).exists() {
-            let bytes = std::fs::read(path).expect("read program");
-            svm.add_program(MESSAGE_EMITTER_ID, &bytes)
-                .expect("load program");
-            return;
-        }
-    }
-    panic!(
-        "message_emitter_example.so not found. Build it with: cargo build-sbf -p message-emitter-example"
-    );
+    )
+    .expect("Failed to load message_emitter_example program");
 }
 
 /// Find the emitter PDA for the message-emitter-example program.

@@ -14,7 +14,6 @@ use solana_sdk::{
     signature::{Keypair, Signer},
     transaction::Transaction,
 };
-use std::path::Path;
 use wormhole_svm_test::{
     close_signatures, emitter_address_from_20, post_signatures, setup_wormhole, TestGuardian,
     TestGuardianSet, TestVaa, WormholeProgramsConfig,
@@ -22,34 +21,13 @@ use wormhole_svm_test::{
 
 const GUARDIAN_SET_INDEX: u32 = 0;
 
-/// Find and load the vaa-verifier-example program binary.
+/// Load the vaa-verifier-example program binary.
 fn load_example_program(svm: &mut LiteSVM) {
-    // Search paths relative to workspace root and crate directories
-    let search_paths = [
-        "target/deploy",
-        "../target/deploy",
-        "../../target/deploy",
-        "../../../target/deploy",
-    ];
-
-    for base in &search_paths {
-        let path = format!("{}/vaa_verifier_example.so", base);
-        if Path::new(&path).exists() {
-            let program_bytes = std::fs::read(&path).expect("Failed to read example program");
-            svm.add_program(vaa_verifier_example::ID, &program_bytes)
-                .expect("Failed to load example program");
-            println!(
-                "Loaded vaa_verifier_example at {}",
-                vaa_verifier_example::ID
-            );
-            return;
-        }
-    }
-
-    panic!(
-        "vaa_verifier_example.so not found. Build it with: \
-        cd programs/vaa-verifier-example && cargo build-sbf"
-    );
+    svm.add_program_from_file(
+        vaa_verifier_example::ID,
+        "../../target/deploy/vaa_verifier_example.so",
+    )
+    .expect("Failed to load vaa_verifier_example program");
 }
 
 #[test]
@@ -465,22 +443,11 @@ fn test_emit_capture_verify_roundtrip() {
 
     // Helper to load the message-emitter-example program
     fn load_message_emitter(svm: &mut LiteSVM) {
-        let search_paths = [
-            "target/deploy",
-            "../target/deploy",
-            "../../target/deploy",
-            "../../../target/deploy",
-        ];
-        for base in &search_paths {
-            let path = format!("{}/message_emitter_example.so", base);
-            if Path::new(&path).exists() {
-                let bytes = std::fs::read(&path).expect("read program");
-                svm.add_program(MESSAGE_EMITTER_ID, &bytes)
-                    .expect("load program");
-                return;
-            }
-        }
-        panic!("message_emitter_example.so not found");
+        svm.add_program_from_file(
+            MESSAGE_EMITTER_ID,
+            "../../target/deploy/message_emitter_example.so",
+        )
+        .expect("Failed to load message_emitter_example program");
     }
 
     // Helper to build emit_message instruction
