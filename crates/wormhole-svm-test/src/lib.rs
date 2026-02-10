@@ -31,3 +31,9 @@ mod litesvm;
 
 #[cfg(feature = "litesvm")]
 pub use crate::litesvm::*;
+
+#[cfg(feature = "resolver")]
+mod resolver;
+
+#[cfg(feature = "resolver")]
+pub use resolver::*;
