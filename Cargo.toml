@@ -15,7 +15,7 @@ litesvm = "0.7"
 solana-sdk = "2.3"
 solana-program = "2.3"
 wormhole-raw-vaas = "0.3.0"
-wormhole-svm-definitions = { git = "https://github.com/wormhole-foundation/wormhole", features = ["solana", "verify-vaa-shim"] }
+wormhole-svm-definitions = { git = "https://github.com/wormhole-foundation/wormhole", features = ["verify-vaa-shim"] }
 wormhole-svm-shim = { git = "https://github.com/wormhole-foundation/wormhole" }
 anchor-lang = "0"
 # TODO: pin
