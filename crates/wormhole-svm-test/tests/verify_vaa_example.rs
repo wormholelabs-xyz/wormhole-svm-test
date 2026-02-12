@@ -511,10 +511,17 @@ fn test_emit_capture_verify_roundtrip() {
     let finality = 1u8; // Confirmed
 
     println!("Step 1: Emitting message via Post Message Shim...");
+    // The Post Message Shim does NOT transfer the bridge fee itself.
+    // Callers must transfer the fee to the fee collector in the same transaction.
+    let fee_ix = wormhole_svm_test::build_bridge_fee_ix(&payer.pubkey());
     let emit_ix = build_emit_ix(&payer.pubkey(), nonce, finality, payload);
     let blockhash = svm.latest_blockhash();
-    let tx =
-        Transaction::new_signed_with_payer(&[emit_ix], Some(&payer.pubkey()), &[&payer], blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[fee_ix, emit_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        blockhash,
+    );
     let tx_meta = svm.send_transaction(tx).expect("emit should succeed");
 
     // Step 4: Capture everything automatically using the combined extraction helper

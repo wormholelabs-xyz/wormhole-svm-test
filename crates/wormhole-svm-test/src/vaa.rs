@@ -77,7 +77,7 @@ impl TestVaa {
     pub fn digest(&self) -> [u8; 32] {
         let body = self.body();
         let message_hash = Keccak256::digest(&body);
-        Keccak256::digest(&message_hash).into()
+        Keccak256::digest(message_hash).into()
     }
 
     /// Build a signed VAA with all guardians in the set.

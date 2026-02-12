@@ -141,7 +141,7 @@ fn process_verify_vaa(
             guardian_set: guardian_set.key,
             guardian_signatures: guardian_signatures.key,
         },
-        data: VerifyHashData::new(guardian_set_bump, digest.into()),
+        data: VerifyHashData::new(guardian_set_bump, digest),
     }
     .instruction();
 

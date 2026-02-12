@@ -66,7 +66,7 @@ impl TestGuardian {
     /// The VAA body is double-hashed with keccak256 per Wormhole protocol.
     pub fn sign_vaa_body(&self, vaa_body: &[u8]) -> [u8; 66] {
         let message_hash = Keccak256::digest(vaa_body);
-        let digest: [u8; 32] = Keccak256::digest(&message_hash).into();
+        let digest: [u8; 32] = Keccak256::digest(message_hash).into();
 
         let signature = self.sign(&digest);
 
@@ -109,7 +109,7 @@ impl TestGuardianSet {
                 let mut input = [0u8; 40];
                 input[..8].copy_from_slice(&seed.to_le_bytes());
                 input[8..16].copy_from_slice(&(i as u64).to_le_bytes());
-                let secret: [u8; 32] = Keccak256::digest(&input).into();
+                let secret: [u8; 32] = Keccak256::digest(input).into();
                 TestGuardian::new(secret, i as u8)
             })
             .collect();

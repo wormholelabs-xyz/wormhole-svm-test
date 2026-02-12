@@ -78,6 +78,7 @@ pub enum ReplayProtection {
 }
 
 /// Configuration for loading Wormhole programs.
+#[derive(Default)]
 pub struct WormholeProgramsConfig {
     /// Path to verify_vaa_shim.so (or None to search default locations).
     pub verify_vaa_shim: Option<PathBuf>,
@@ -85,16 +86,6 @@ pub struct WormholeProgramsConfig {
     pub core_bridge: Option<PathBuf>,
     /// Path to post_message_shim.so (or None to search default locations).
     pub post_message_shim: Option<PathBuf>,
-}
-
-impl Default for WormholeProgramsConfig {
-    fn default() -> Self {
-        Self {
-            verify_vaa_shim: None,
-            core_bridge: None,
-            post_message_shim: None,
-        }
-    }
 }
 
 /// Accounts created by setup_wormhole.
@@ -294,6 +285,20 @@ pub fn create_bridge_config(svm: &mut LiteSVM, guardian_set_index: u32) {
     };
 
     svm.set_account(CORE_BRIDGE_CONFIG, account).unwrap();
+}
+
+/// The default bridge fee set by [`create_bridge_config`] (in lamports).
+pub const DEFAULT_BRIDGE_FEE: u64 = 10;
+
+/// Build a system transfer instruction that pays the Wormhole bridge fee.
+///
+/// The Post Message Shim does NOT transfer the fee itself. Callers must
+/// include this instruction in the same transaction, before the
+/// `post_message` instruction, so that `fee_collector.lamports - last_lamports >= fee`
+/// when the core bridge checks.
+pub fn build_bridge_fee_ix(payer: &Pubkey) -> Instruction {
+    use wormhole_svm_definitions::solana::mainnet::CORE_BRIDGE_FEE_COLLECTOR;
+    solana_sdk::system_instruction::transfer(payer, &CORE_BRIDGE_FEE_COLLECTOR, DEFAULT_BRIDGE_FEE)
 }
 
 /// Create the Wormhole fee collector account in LiteSVM.
@@ -757,7 +762,7 @@ struct PostMessageData {
 impl PostMessageData {
     fn parse(data: &[u8]) -> Option<Self> {
         // Format: 8 (disc) + 4 (nonce) + 1 (finality) + 4 (len) + payload
-        if data.len() < 17 || &data[..8] != &POST_MESSAGE_SELECTOR {
+        if data.len() < 17 || data[..8] != POST_MESSAGE_SELECTOR {
             return None;
         }
         let nonce = u32::from_le_bytes(data[8..12].try_into().ok()?);
@@ -785,7 +790,7 @@ struct MessageEvent {
 impl MessageEvent {
     fn parse(data: &[u8]) -> Option<Self> {
         // Format: 8 (cpi disc) + 8 (event disc) + 32 (emitter) + 8 (seq) + 4 (time)
-        if data.len() < 60 || &data[8..16] != &MESSAGE_EVENT_DISCRIMINATOR {
+        if data.len() < 60 || data[8..16] != MESSAGE_EVENT_DISCRIMINATOR {
             return None;
         }
         let event_data = &data[16..];
@@ -904,7 +909,7 @@ pub fn extract_posted_message_info_from_tx(
     // Pair them up - they should appear in the same order
     post_messages
         .into_iter()
-        .zip(events.into_iter())
+        .zip(events)
         .map(|(post_msg, event)| {
             PostedMessageInfo::from_event(
                 &event,

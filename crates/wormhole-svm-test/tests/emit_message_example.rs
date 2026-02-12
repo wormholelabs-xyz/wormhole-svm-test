@@ -23,8 +23,8 @@ use wormhole_svm_definitions::{
     solana::mainnet::{CORE_BRIDGE_PROGRAM_ID, POST_MESSAGE_SHIM_PROGRAM_ID},
 };
 use wormhole_svm_test::{
-    extract_posted_message_info_from_tx, read_emitter_sequence, setup_wormhole,
-    with_posted_signatures, TestGuardian, TestGuardianSet, WormholeProgramsConfig,
+    build_bridge_fee_ix, extract_posted_message_info_from_tx, read_emitter_sequence,
+    setup_wormhole, with_posted_signatures, TestGuardian, TestGuardianSet, WormholeProgramsConfig,
 };
 
 // Message emitter example program ID (from the program's declare_id!)
@@ -101,9 +101,15 @@ fn test_emit_message_and_capture() {
     let nonce = 42u32;
     let finality = 1u8;
 
+    let fee_ix = build_bridge_fee_ix(&payer.pubkey());
     let ix = build_emit_ix(&payer.pubkey(), nonce, finality, payload);
     let blockhash = svm.latest_blockhash();
-    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[fee_ix, ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        blockhash,
+    );
     let tx_meta = svm.send_transaction(tx).expect("emit should succeed");
 
     // Extract everything from the transaction
@@ -166,10 +172,15 @@ fn test_emit_multiple_messages_increments_sequence() {
     // Emit multiple messages and verify sequence increments
     for expected_seq in 0u64..3 {
         let payload = format!("Message {}", expected_seq);
+        let fee_ix = build_bridge_fee_ix(&payer.pubkey());
         let ix = build_emit_ix(&payer.pubkey(), 0, 1, payload.as_bytes());
         let blockhash = svm.latest_blockhash();
-        let tx =
-            Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], blockhash);
+        let tx = Transaction::new_signed_with_payer(
+            &[fee_ix, ix],
+            Some(&payer.pubkey()),
+            &[&payer],
+            blockhash,
+        );
         let tx_meta = svm.send_transaction(tx).expect("emit should succeed");
 
         let message_info = extract_posted_message_info_from_tx(&tx_meta)
@@ -209,9 +220,15 @@ fn test_emitted_message_creates_verifiable_vaa() {
 
     // Emit a message
     let payload = b"Test payload for VAA verification";
+    let fee_ix = build_bridge_fee_ix(&payer.pubkey());
     let ix = build_emit_ix(&payer.pubkey(), 0, 1, payload);
     let blockhash = svm.latest_blockhash();
-    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[fee_ix, ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        blockhash,
+    );
     let tx_meta = svm.send_transaction(tx).expect("emit should succeed");
 
     let message_info = extract_posted_message_info_from_tx(&tx_meta)
@@ -264,9 +281,15 @@ fn test_extract_posted_message_info_from_tx() {
     let nonce = 999u32;
     let finality = 1u8;
 
+    let fee_ix = build_bridge_fee_ix(&payer.pubkey());
     let ix = build_emit_ix(&payer.pubkey(), nonce, finality, payload);
     let blockhash = svm.latest_blockhash();
-    let tx = Transaction::new_signed_with_payer(&[ix], Some(&payer.pubkey()), &[&payer], blockhash);
+    let tx = Transaction::new_signed_with_payer(
+        &[fee_ix, ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        blockhash,
+    );
     let tx_meta = svm.send_transaction(tx).expect("should succeed");
 
     // Extract using the combined function
