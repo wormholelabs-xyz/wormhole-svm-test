@@ -1,0 +1,18 @@
+[package]
+name = "wormhole-svm-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Submit signed VAAs to Solana programs"
+
+[[bin]]
+name = "svm-vaa"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+anyhow = "1"
+hex = { workspace = true }
+wormhole-svm-submit = { workspace = true }
+wormhole-svm-definitions = { workspace = true }
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }

@@ -2,6 +2,7 @@
 members = [
     "crates/wormhole-svm-test",
     "crates/wormhole-svm-submit",
+    "crates/wormhole-svm-cli",
     "programs/vaa-verifier-example",
     "programs/message-emitter-example",
 ]
