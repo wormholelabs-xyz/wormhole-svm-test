@@ -1,11 +1,12 @@
 # wormhole-svm-utils
 
-Testing and submission utilities for Solana programs integrating with Wormhole.
+Testing, submission, and CLI utilities for Solana programs integrating with Wormhole.
 
-This workspace contains two crates:
+This workspace contains three crates:
 
 - **`wormhole-svm-test`** — LiteSVM testing helpers: guardian signing, VAA construction, environment setup, automatic verification and replay checks
 - **`wormhole-svm-submit`** — Generic VAA submission via the executor-account-resolver protocol, with a `SolanaConnection` trait that abstracts over RPC and LiteSVM
+- **`wormhole-svm-cli`** — CLI tool (`svm-vaa`) for submitting signed VAAs to any Solana program that implements the resolver protocol
 
 ## Workspace Structure
 
@@ -13,7 +14,8 @@ This workspace contains two crates:
 wormhole-svm-utils/
 ├── crates/
 │   ├── wormhole-svm-test/       # Test utilities (guardians, VAA signing, LiteSVM helpers)
-│   └── wormhole-svm-submit/     # SolanaConnection trait + generic resolver/executor + RPC impl
+│   ├── wormhole-svm-submit/     # SolanaConnection trait + generic resolver/executor + RPC impl
+│   └── wormhole-svm-cli/        # CLI binary: svm-vaa
 ├── programs/
 │   ├── vaa-verifier-example/    # Example program: verify VAA via shim CPI
 │   └── message-emitter-example/ # Example program: emit Wormhole message
@@ -70,6 +72,43 @@ use wormhole_svm_submit::execute::execute_instruction_groups;
 let resolved = resolve_execute_vaa_v1(&conn, &program_id, &payer, &vaa_body, &guardian_set, 10)?;
 let sigs = execute_instruction_groups(&mut conn, &payer, &resolved.instruction_groups, &sigs_pubkey, &guardian_set)?;
 ```
+
+## wormhole-svm-cli (`svm-vaa`)
+
+CLI tool for submitting signed VAAs to any Solana program that implements `resolve_execute_vaa_v1` from [executor-account-resolver-svm](https://github.com/wormholelabs-xyz/executor-account-resolver-svm).
+
+### Install
+
+```bash
+cargo install --path crates/wormhole-svm-cli
+```
+
+### Usage
+
+```bash
+# Submit a signed VAA (hex) to a program on devnet
+svm-vaa submit \
+  --program-id <PROGRAM_ID> \
+  --payer ~/.config/solana/id.json \
+  <signed-vaa-hex>
+
+# Read from file
+svm-vaa submit --program-id <PROGRAM_ID> --payer key.json @signed-vaa.hex
+
+# Pipe from wsch (companion schema tool — https://github.com/wormholelabs-xyz/wormhole-schemas)
+wsch build -s 'vaa<onboard>' --json payload.json | wsch sign --guardian-key $KEY | svm-vaa submit --program-id <PROGRAM_ID> --payer key.json
+```
+
+### Options
+
+| Flag | Env var | Default | Description |
+|------|---------|---------|-------------|
+| `--rpc-url` | `SOLANA_RPC_URL` | `https://api.devnet.solana.com` | Solana RPC endpoint |
+| `--core-bridge` | `CORE_BRIDGE_PROGRAM_ID` | auto-detected from URL | Wormhole Core Bridge program ID |
+| `--program-id` | `PROGRAM_ID` | required | Target program implementing the resolver protocol |
+| `--payer` | `PAYER_KEYPAIR` | required | Path to payer keypair file |
+
+The Core Bridge program ID is auto-detected for mainnet and devnet RPC URLs. For other networks, pass `--core-bridge` explicitly.
 
 ## wormhole-svm-test
 
