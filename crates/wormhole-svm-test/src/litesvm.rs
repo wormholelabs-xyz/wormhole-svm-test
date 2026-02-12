@@ -265,19 +265,22 @@ pub fn create_guardian_set_account(
 ///
 /// This creates a full bridge config that supports both VAA verification and message posting.
 ///
-/// Bridge config data structure:
+/// Bridge config data structure (BridgeData, borsh-serialized):
 /// - guardian_set_index: u32 (4 bytes, little-endian)
-/// - guardian_set_expiration_time: u32 (4 bytes)
-/// - fee: u64 (8 bytes)
-/// - last_lamports: u64 (8 bytes) - required for post_message
+/// - last_lamports: u64 (8 bytes) - required for post_message fee tracking
+/// - guardian_set_expiration_time: u32 (4 bytes) - BridgeConfig.guardian_set_expiration_time
+/// - fee: u64 (8 bytes) - BridgeConfig.fee
 pub fn create_bridge_config(svm: &mut LiteSVM, guardian_set_index: u32) {
+    // Match the fee collector's initial balance so the core bridge fee check works.
+    let rent = Rent::default();
+    let fee_collector_lamports = rent.minimum_balance(0);
+
     let mut data = Vec::new();
     data.extend_from_slice(&guardian_set_index.to_le_bytes());
+    data.extend_from_slice(&fee_collector_lamports.to_le_bytes()); // last_lamports
     data.extend_from_slice(&86400u32.to_le_bytes()); // 24 hour expiration
-    data.extend_from_slice(&0u64.to_le_bytes()); // no fee
-    data.extend_from_slice(&0u64.to_le_bytes()); // last_lamports
+    data.extend_from_slice(&10u64.to_le_bytes()); // 10 lamport fee
 
-    let rent = Rent::default();
     let lamports = rent.minimum_balance(data.len());
 
     let account = Account {
