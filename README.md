@@ -75,7 +75,7 @@ let sigs = execute_instruction_groups(&mut conn, &payer, &resolved.instruction_g
 
 ## wormhole-svm-cli (`svm-vaa`)
 
-CLI tool for submitting signed VAAs to any Solana program that implements `resolve_execute_vaa_v1` from [executor-account-resolver-svm](https://github.com/wormholelabs-xyz/executor-account-resolver-svm).
+Solana CLI utilities: submit signed VAAs, derive PDAs, and inspect accounts.
 
 ### Install
 
@@ -83,32 +83,55 @@ CLI tool for submitting signed VAAs to any Solana program that implements `resol
 cargo install --path crates/wormhole-svm-cli
 ```
 
-### Usage
+### Global options
+
+| Flag | Env var | Description |
+|------|---------|-------------|
+| `-u` / `--rpc-url` | `SOLANA_RPC_URL` | **Required.** Solana RPC endpoint or shorthand: `d`=devnet, `m`=mainnet, `l`=localhost, `t`=testnet |
+| `--core-bridge` | `CORE_BRIDGE_PROGRAM_ID` | Wormhole Core Bridge program ID (auto-detected for mainnet/devnet URLs) |
+
+### `submit` — Submit a signed VAA
 
 ```bash
 # Submit a signed VAA (hex) to a program on devnet
-svm-vaa submit \
+svm-vaa -u d submit \
   --program-id <PROGRAM_ID> \
   --payer ~/.config/solana/id.json \
   <signed-vaa-hex>
 
 # Read from file
-svm-vaa submit --program-id <PROGRAM_ID> --payer key.json @signed-vaa.hex
+svm-vaa -u d submit --program-id <PROGRAM_ID> --payer key.json @signed-vaa.hex
 
 # Pipe from wsch (companion schema tool — https://github.com/wormholelabs-xyz/wormhole-schemas)
-wsch build -s 'vaa<onboard>' --json payload.json | wsch sign --guardian-key $KEY | svm-vaa submit --program-id <PROGRAM_ID> --payer key.json
+wsch build -s 'vaa<onboard>' --json payload.json | wsch sign --guardian-key $KEY \
+  | svm-vaa -u d submit --program-id <PROGRAM_ID> --payer key.json
 ```
 
-### Options
+| Flag | Env var | Description |
+|------|---------|-------------|
+| `--program-id` | `PROGRAM_ID` | **Required.** Target program implementing the resolver protocol |
+| `--payer` | `PAYER_KEYPAIR` | **Required.** Path to payer keypair file |
 
-| Flag | Env var | Default | Description |
-|------|---------|---------|-------------|
-| `--rpc-url` | `SOLANA_RPC_URL` | `https://api.devnet.solana.com` | Solana RPC endpoint |
-| `--core-bridge` | `CORE_BRIDGE_PROGRAM_ID` | auto-detected from URL | Wormhole Core Bridge program ID |
-| `--program-id` | `PROGRAM_ID` | required | Target program implementing the resolver protocol |
-| `--payer` | `PAYER_KEYPAIR` | required | Path to payer keypair file |
+### `pda` — Derive a PDA
 
-The Core Bridge program ID is auto-detected for mainnet and devnet RPC URLs. For other networks, pass `--core-bridge` explicitly.
+Seeds are strings by default, or hex with a `0x` prefix.
+
+```bash
+svm-vaa pda <PROGRAM_ID> foo bar baz
+svm-vaa pda <PROGRAM_ID> 0xdeadbeef hello
+```
+
+### `account` — Dump account data
+
+Prints account data as hex to stdout, metadata to stderr. The address can be a base58 pubkey or an inline PDA derivation (`<PROGRAM_ID>:seed1:seed2:...`).
+
+```bash
+# By address
+svm-vaa -u m account <ADDRESS>
+
+# By PDA derivation
+svm-vaa -u m account <PROGRAM_ID>:seed1:0xdeadbeef
+```
 
 ## wormhole-svm-test
 

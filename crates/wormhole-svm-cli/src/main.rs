@@ -10,12 +10,8 @@ use solana_sdk::signature::read_keypair_file;
 #[command(name = "svm-vaa")]
 #[command(about = "Submit signed VAAs to Solana programs")]
 struct Cli {
-    /// Solana RPC URL
-    #[arg(
-        long,
-        env = "SOLANA_RPC_URL",
-        default_value = "https://api.devnet.solana.com"
-    )]
+    /// Solana RPC URL (or shorthand: d=devnet, m=mainnet, l=localhost, t=testnet)
+    #[arg(short = 'u', long, env = "SOLANA_RPC_URL")]
     rpc_url: String,
 
     /// Wormhole Core Bridge program ID (auto-detected from --rpc-url if omitted)
@@ -72,8 +68,19 @@ fn main() {
     }
 }
 
+fn resolve_rpc_url(url: &str) -> String {
+    match url {
+        "d" | "devnet" => "https://api.devnet.solana.com".to_string(),
+        "m" | "mainnet" | "mainnet-beta" => "https://api.mainnet-beta.solana.com".to_string(),
+        "t" | "testnet" => "https://api.testnet.solana.com".to_string(),
+        "l" | "localhost" => "http://127.0.0.1:8899".to_string(),
+        other => other.to_string(),
+    }
+}
+
 fn run() -> Result<()> {
-    let cli = Cli::parse();
+    let mut cli = Cli::parse();
+    cli.rpc_url = resolve_rpc_url(&cli.rpc_url);
 
     match &cli.command {
         Command::Submit {
