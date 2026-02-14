@@ -44,7 +44,7 @@ enum Command {
 
     /// Fetch and dump an account's data as hex
     Account {
-        /// Account address (or use `pda:<PROGRAM_ID>:seed1:seed2` to derive)
+        /// Account address, or PDA derivation: <PROGRAM_ID>:seed1:seed2:...
         address: String,
     },
 
@@ -210,14 +210,14 @@ fn cmd_account(cli: &Cli, address: &str) -> Result<()> {
     Ok(())
 }
 
-/// Parse an address as a base58 pubkey or `pda:<PROGRAM_ID>:seed1:seed2:...`
+/// Parse an address as a base58 pubkey or `<PROGRAM_ID>:seed1:seed2:...` PDA derivation.
 fn parse_address(address: &str) -> Result<Pubkey> {
-    if let Some(rest) = address.strip_prefix("pda:") {
-        let parts: Vec<&str> = rest.split(':').collect();
+    if address.contains(':') {
+        let parts: Vec<&str> = address.split(':').collect();
         if parts.len() < 2 {
-            bail!("pda: syntax requires at least program_id and one seed: pda:<PROGRAM_ID>:seed1:...");
+            bail!("PDA syntax requires at least program_id and one seed: <PROGRAM_ID>:seed1:...");
         }
-        let program_id = Pubkey::from_str(parts[0]).context("invalid program ID in pda: address")?;
+        let program_id = Pubkey::from_str(parts[0]).context("invalid program ID in PDA address")?;
         let seed_bytes: Vec<Vec<u8>> = parts[1..]
             .iter()
             .map(|s| {
@@ -252,8 +252,7 @@ fn cmd_pda(program_id: &str, seeds: &[String]) -> Result<()> {
         .collect::<Result<_>>()?;
 
     let seed_slices: Vec<&[u8]> = seed_bytes.iter().map(|s| s.as_slice()).collect();
-    let (pda, bump) =
-        Pubkey::find_program_address(&seed_slices, &program_id);
+    let (pda, bump) = Pubkey::find_program_address(&seed_slices, &program_id);
 
     println!("{}", pda);
     eprintln!("bump: {}", bump);
